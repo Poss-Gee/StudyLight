@@ -12,9 +12,10 @@ import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
+import { ProfileEditorDialog } from '@/components/profile-editor-dialog';
 
 export default function ProfilePage() {
-  const { user, userProfile, logout } = useAuth();
+  const { user, userProfile, logout, setUserProfile } = useAuth();
   const [quizHistory, setQuizHistory] = useState<QuizHistory[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +40,10 @@ export default function ProfilePage() {
 
     fetchData();
   }, [user]);
+
+  const handleProfileUpdate = (updatedProfile: any) => {
+    setUserProfile(updatedProfile);
+  };
 
   if (loading || !userProfile) {
     return <div>Loading profile...</div>;
@@ -65,7 +70,10 @@ export default function ProfilePage() {
               <CardDescription>{email}</CardDescription>
               <Badge variant="outline" className="mt-2 capitalize">{role}</Badge>
             </CardHeader>
-            <CardContent>
+            <CardContent className="flex flex-col gap-2">
+               <ProfileEditorDialog onProfileUpdated={handleProfileUpdate}>
+                 <Button variant="outline" className="w-full">Edit Profile</Button>
+               </ProfileEditorDialog>
                <Button variant="outline" className="w-full" onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout

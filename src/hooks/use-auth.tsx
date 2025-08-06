@@ -7,6 +7,8 @@ import {
   useState,
   useEffect,
   ReactNode,
+  Dispatch,
+  SetStateAction,
 } from 'react';
 import {
   onAuthStateChanged,
@@ -18,7 +20,7 @@ import {
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
@@ -26,11 +28,13 @@ import type { UserProfile } from '@/lib/types';
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
+  setUserProfile: Dispatch<SetStateAction<UserProfile | null>>;
   loading: boolean;
   login: (email: string, pass: string) => Promise<any>;
   signup: (name: string, email: string, pass: string, role: 'student' | 'teacher') => Promise<any>;
   logout: () => Promise<void>;
   signInWithGoogle: (role: 'student' | 'teacher') => Promise<any>;
+  updateUserProfile: (name: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -123,8 +127,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       );
     }
   };
+
+  const updateUserProfile = async (name: string) => {
+    if (!user) throw new Error("Not authenticated");
+    
+    // Update Firebase Auth profile
+    await updateProfile(user, { displayName: name });
+
+    // Update Firestore profile
+    const userDocRef = doc(db, 'users', user.uid);
+    await updateDoc(userDocRef, { name });
+
+    // Update local state
+    setUserProfile(prev => prev ? { ...prev, name } : null);
+  };
   
-  const value = { user, userProfile, loading, login, signup, logout, signInWithGoogle };
+  const value = { user, userProfile, setUserProfile, loading, login, signup, logout, signInWithGoogle, updateUserProfile };
   
   if(loading) {
     return <div className="flex items-center justify-center h-screen bg-background">Loading authentication...</div>
