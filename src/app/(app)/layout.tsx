@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -20,7 +21,6 @@ import { usePathname } from 'next/navigation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isTeacher = pathname.startsWith('/teacher');
 
   const studentNavItems = [
     { href: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -28,17 +28,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { href: '/quizzes', icon: HelpCircle, label: 'Quizzes' },
     { href: '/profile', icon: User, label: 'Profile' },
   ];
-
-  const teacherNavItems = [
-    { href: '/teacher/dashboard', icon: Home, label: 'Dashboard' },
-    { href: '/teacher/notes', icon: BookPlus, label: 'Manage Notes' },
-    { href: '/teacher/quizzes', icon: HelpCircle, label: 'Manage Quizzes' },
-    { href: '/teacher/students', icon: Users, label: 'Students' },
-    { href: '/profile', icon: User, label: 'Profile' },
-  ];
   
-  const navItems = isTeacher ? teacherNavItems : studentNavItems;
-  const homeLink = isTeacher ? '/teacher/dashboard' : '/dashboard';
+  const navItems = studentNavItems;
+  const homeLink = '/dashboard';
 
   const sidebarContent = (
     <div className="flex h-full max-h-screen flex-col gap-2">
