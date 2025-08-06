@@ -87,11 +87,11 @@ export default function TeacherNotesPage() {
                  <Badge variant="secondary">{subject.noteCount} Notes</Badge>
                  <Badge variant="secondary">{subject.quizCount} Quizzes</Badge>
               </CardContent>
-              <CardFooter className="flex justify-end gap-2">
+              <CardFooter className="flex flex-wrap justify-end gap-2">
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                       <Button variant="destructive" size="sm">
-                          <Trash2 />
+                       <Button variant="destructive" size="sm" className="flex-grow sm:flex-grow-0">
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
                        </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -108,11 +108,11 @@ export default function TeacherNotesPage() {
                     </AlertDialogContent>
                   </AlertDialog>
                  <SubjectEditorDialog subject={subject} onSubjectSaved={handleSubjectSaved}>
-                   <Button variant="outline" size="sm">
-                     <Edit className="mr-2" /> Edit Subject
+                   <Button variant="outline" size="sm" className="flex-grow sm:flex-grow-0">
+                     <Edit className="mr-2 h-4 w-4" /> Edit Subject
                    </Button>
                  </SubjectEditorDialog>
-                 <Button size="sm" asChild>
+                 <Button size="sm" asChild className="flex-grow sm:flex-grow-0">
                   <Link href={`/teacher/notes/${subject.id}`}>
                       Manage Notes <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
