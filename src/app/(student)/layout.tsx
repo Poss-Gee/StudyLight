@@ -4,14 +4,11 @@
 import Link from 'next/link';
 import {
   BookCopy,
-  GraduationCap,
-  HelpCircle,
   Home,
-  LogOut,
-  Menu,
+  HelpCircle,
   User,
-  BookPlus,
-  Users,
+  Menu,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -19,19 +16,18 @@ import { Logo } from '@/components/logo';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { logout } = useAuth();
 
 
-  const studentNavItems = [
+  const navItems = [
     { href: '/dashboard', icon: Home, label: 'Dashboard' },
     { href: '/notes', icon: BookCopy, label: 'Notes' },
     { href: '/quizzes', icon: HelpCircle, label: 'Quizzes' },
     { href: '/profile', icon: User, label: 'Profile' },
   ];
   
-  const navItems = studentNavItems;
   const homeLink = '/dashboard';
 
   const sidebarContent = (
@@ -47,7 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link
               key={item.label}
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted ${pathname === item.href ? 'bg-muted text-primary' : ''}`}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted ${pathname.startsWith(item.href) ? 'bg-muted text-primary' : ''}`}
             >
               <item.icon className="h-4 w-4" />
               {item.label}

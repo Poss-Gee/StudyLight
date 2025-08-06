@@ -7,6 +7,7 @@ import { notFound, useParams } from 'next/navigation';
 import { QuizClient } from '@/components/quiz-client';
 import { useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 
 export default function QuizPage() {
   const params = useParams();

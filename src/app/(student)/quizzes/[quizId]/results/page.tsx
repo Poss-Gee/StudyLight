@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { getQuiz, saveQuizResult } from '@/lib/firestore';
-import { type Quiz, type Question } from '@/lib/types';
+import { type Quiz } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
