@@ -50,6 +50,7 @@ export default function QuizEditorPage() {
     const [loading, setLoading] = useState(!isNewQuiz);
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiTopic, setAiTopic] = useState('');
+    const [aiQuestionCount, setAiQuestionCount] = useState('5');
 
     const form = useForm<QuizFormValues>({
         resolver: zodResolver(quizFormSchema),
@@ -110,7 +111,7 @@ export default function QuizEditorPage() {
         setIsGenerating(true);
         try {
             const subjectName = subjects.find(s => s.id === subjectId)?.name || '';
-            const result = await generateQuiz({ topic: aiTopic, subject: subjectName, questionCount: 5 });
+            const result = await generateQuiz({ topic: aiTopic, subject: subjectName, questionCount: parseInt(aiQuestionCount) });
             
             form.setValue('title', result.title);
             replace(result.questions.map(q => ({ ...q, id: `q-${Math.random()}` })));
@@ -217,17 +218,30 @@ export default function QuizEditorPage() {
                                     <p className="text-sm text-muted-foreground">
                                         Provide a topic and let AI generate the quiz for you.
                                     </p>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col sm:flex-row gap-2">
                                         <Input
                                             placeholder="e.g., Photosynthesis"
                                             value={aiTopic}
                                             onChange={(e) => setAiTopic(e.target.value)}
                                             disabled={isGenerating}
+                                            className="flex-grow"
                                         />
-                                        <Button type="button" onClick={handleAiGenerate} disabled={isGenerating}>
-                                            <Wand2 className="mr-2" />
-                                            {isGenerating ? 'Generating...' : 'Generate'}
-                                        </Button>
+                                        <div className="flex items-center gap-2">
+                                            <Select value={aiQuestionCount} onValueChange={setAiQuestionCount} disabled={isGenerating}>
+                                                <SelectTrigger className="w-[180px]">
+                                                    <SelectValue placeholder="No. of questions" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="3">3 Questions</SelectItem>
+                                                    <SelectItem value="5">5 Questions</SelectItem>
+                                                    <SelectItem value="10">10 Questions</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Button type="button" onClick={handleAiGenerate} disabled={isGenerating}>
+                                                <Wand2 className="mr-2" />
+                                                {isGenerating ? 'Generating...' : 'Generate'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             )}
