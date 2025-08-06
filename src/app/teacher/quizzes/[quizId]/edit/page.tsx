@@ -84,7 +84,7 @@ export default function QuizEditorPage() {
                      form.reset({
                         title: '',
                         subject: '',
-                        questions: [{ text: '', options: ['', ''], correctAnswer: 0 }],
+                        questions: [{ text: '', options: ['', '', '', ''], correctAnswer: 0 }],
                     });
                 }
             } catch (error) {
@@ -105,6 +105,7 @@ export default function QuizEditorPage() {
                 // ensure questions have a firestore-safe ID
                  questions: data.questions.map((q, index) => ({
                     ...q,
+                    options: q.options.filter(opt => opt.trim() !== ''), // remove empty options
                     id: q.id?.startsWith('q-') ? `question-${index}-${Date.now()}` : q.id || `question-${index}-${Date.now()}`
                 })),
             };
@@ -121,7 +122,7 @@ export default function QuizEditorPage() {
     };
     
     const addQuestion = () => {
-        append({ text: '', options: ['', ''], correctAnswer: 0, id: `q-${fields.length}-${Date.now()}` });
+        append({ text: '', options: ['', '', '', ''], correctAnswer: 0, id: `q-${fields.length}-${Date.now()}` });
     };
 
     if (loading) {
@@ -213,6 +214,7 @@ export default function QuizEditorPage() {
                                             key={`${field.id}-option-${optionIndex}`}
                                             control={form.control}
                                             name={`questions.${index}.options.${optionIndex}`}
+                                            defaultValue=""
                                             render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Option {optionIndex + 1}</FormLabel>
@@ -232,14 +234,15 @@ export default function QuizEditorPage() {
                                         render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Correct Answer</FormLabel>
-                                                 <Select onValueChange={field.onChange} defaultValue={field.value?.toString()}>
+                                                 <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
                                                     <FormControl>
                                                         <SelectTrigger>
                                                             <SelectValue placeholder="Select the correct answer" />
                                                         </SelectTrigger>
                                                     </FormControl>
                                                     <SelectContent>
-                                                        {form.getValues(`questions.${index}.options`).map((opt, i) => (
+                                                        {form.watch(`questions.${index}.options`).map((opt, i) => (
+                                                            (opt || '').trim() && 
                                                             <SelectItem key={i} value={i.toString()}>
                                                                 {opt || `Option ${i+1}`}
                                                             </SelectItem>
@@ -275,7 +278,7 @@ export default function QuizEditorPage() {
                          <Button type="button" variant="outline" onClick={() => router.push('/teacher/quizzes')}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading}>
+                        <Button type="submit" disabled={loading || !form.formState.isValid}>
                             {loading ? 'Saving...' : 'Save Quiz'}
                         </Button>
                     </div>
@@ -284,3 +287,4 @@ export default function QuizEditorPage() {
         </>
     );
 }
+
