@@ -7,26 +7,28 @@ import { Button } from '@/components/ui/button';
 import { BookPlus, Users, HelpCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect, useState, useCallback } from 'react';
-import { getSubjects, getQuizzes } from '@/lib/firestore';
+import { getSubjects, getQuizzes, getStudents } from '@/lib/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TeacherDashboardPage() {
   const { userProfile } = useAuth();
   const [totalSubjects, setTotalSubjects] = useState(0);
   const [totalQuizzes, setTotalQuizzes] = useState(0);
+  const [totalStudents, setTotalStudents] = useState(0);
   const [loading, setLoading] = useState(true);
   
-  const totalStudents = 120; // Dummy data for now
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-        const [subjects, quizzes] = await Promise.all([
+        const [subjects, quizzes, students] = await Promise.all([
             getSubjects(),
-            getQuizzes()
+            getQuizzes(),
+            getStudents(),
         ]);
         setTotalSubjects(subjects.length);
         setTotalQuizzes(quizzes.length);
+        setTotalStudents(students.length);
     } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
     } finally {
@@ -81,7 +83,7 @@ export default function TeacherDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{totalStudents} Students</div>
+             {loading ? <Skeleton className="h-8 w-24" /> : <div className="text-2xl font-bold text-primary">{totalStudents} Students</div>}
             <p className="text-xs text-muted-foreground">View student progress and quiz history.</p>
              <Button asChild size="sm" className="mt-4">
               <Link href="/teacher/students">View Students</Link>
