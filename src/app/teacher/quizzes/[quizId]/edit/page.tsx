@@ -238,7 +238,7 @@ export default function QuizEditorPage() {
                                                 </SelectContent>
                                             </Select>
                                             <Button type="button" onClick={handleAiGenerate} disabled={isGenerating}>
-                                                <Wand2 className="mr-2" />
+                                                <Wand2 className="mr-2 h-4 w-4" />
                                                 {isGenerating ? 'Generating...' : 'Generate'}
                                             </Button>
                                         </div>
@@ -348,5 +348,4 @@ export default function QuizEditorPage() {
             </Form>
         </>
     );
-
-    
+}
