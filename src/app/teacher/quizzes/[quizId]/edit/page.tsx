@@ -7,6 +7,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
+import { Wand2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,11 +16,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { getQuiz, getSubjects, saveQuiz } from '@/lib/firestore';
 import type { Subject, Quiz } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generateQuiz } from '@/ai/flows/generate-quiz-flow';
 
 const questionSchema = z.object({
     id: z.string().optional(),
@@ -28,7 +29,7 @@ const questionSchema = z.object({
     correctAnswer: z.coerce.number().min(0, "Please select a correct answer."),
 });
 
-const quizFormSchema = z.object({
+export const quizFormSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters."),
     subject: z.string().min(1, "Please select a subject."),
     questions: z.array(questionSchema).min(1, "A quiz must have at least one question."),
@@ -46,6 +47,8 @@ export default function QuizEditorPage() {
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(!isNewQuiz);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [aiTopic, setAiTopic] = useState('');
 
     const form = useForm<QuizFormValues>({
         resolver: zodResolver(quizFormSchema),
@@ -56,7 +59,7 @@ export default function QuizEditorPage() {
         }
     });
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields, append, remove, replace } = useFieldArray({
         control: form.control,
         name: "questions"
     });
@@ -77,7 +80,6 @@ export default function QuizEditorPage() {
                     form.reset({
                         title: quizData.title,
                         subject: quizData.subject,
-                        // Ensure questions have an ID for react-hook-form keys
                         questions: quizData.questions.map(q => ({...q, id: q.id || `q-${Math.random()}`}))
                     });
                 } else {
@@ -97,15 +99,38 @@ export default function QuizEditorPage() {
         fetchData();
     }, [quizId, isNewQuiz, form, toast]);
 
+    const handleAiGenerate = async () => {
+        const subjectId = form.getValues('subject');
+        if (!aiTopic || !subjectId) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a topic and select a subject to generate a quiz.' });
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const subjectName = subjects.find(s => s.id === subjectId)?.name || '';
+            const result = await generateQuiz({ topic: aiTopic, subject: subjectName, questionCount: 5 });
+            
+            form.setValue('title', result.title);
+            replace(result.questions.map(q => ({ ...q, id: `q-${Math.random()}` })));
+
+            toast({ title: 'Quiz Generated!', description: 'The generated quiz has been populated in the form.' });
+        } catch (error) {
+            console.error('AI generation failed', error);
+            toast({ variant: 'destructive', title: 'Generation Failed', description: 'Could not generate the quiz with AI.' });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const onSubmit = async (data: QuizFormValues) => {
         setLoading(true);
         try {
             const finalQuizData = {
                 ...data,
-                // ensure questions have a firestore-safe ID
                  questions: data.questions.map((q, index) => ({
                     ...q,
-                    options: q.options.filter(opt => opt.trim() !== ''), // remove empty options
+                    options: q.options.filter(opt => (opt || '').trim() !== ''), // remove empty options
                     id: q.id?.startsWith('q-') ? `question-${index}-${Date.now()}` : q.id || `question-${index}-${Date.now()}`
                 })),
             };
@@ -125,7 +150,7 @@ export default function QuizEditorPage() {
         append({ text: '', options: ['', '', '', ''], correctAnswer: 0, id: `q-${fields.length}-${Date.now()}` });
     };
 
-    if (loading) {
+    if (loading && !isNewQuiz) {
         return <Skeleton className="w-full h-96" />;
     }
 
@@ -145,44 +170,66 @@ export default function QuizEditorPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Quiz Details</CardTitle>
-                            <CardDescription>Set the title and subject for your quiz.</CardDescription>
+                            <CardDescription>Set the title, subject and other details for your quiz.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid gap-4 md:grid-cols-2">
-                             <FormField
-                                control={form.control}
-                                name="title"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Quiz Title</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. Algebra Basics" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="subject"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subject</FormLabel>
-                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <CardContent className="grid gap-6">
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <FormField
+                                    control={form.control}
+                                    name="title"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Quiz Title</FormLabel>
                                             <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a subject" />
-                                                </SelectTrigger>
+                                                <Input placeholder="e.g. Algebra Basics" {...field} />
                                             </FormControl>
-                                            <SelectContent>
-                                                {subjects.map(subject => (
-                                                    <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="subject"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Subject</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select a subject" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {subjects.map(subject => (
+                                                        <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+                            {isNewQuiz && (
+                                <div className="p-4 border rounded-lg space-y-4 bg-card-nested">
+                                    <Label>Generate with AI</Label>
+                                    <p className="text-sm text-muted-foreground">
+                                        Provide a topic and let AI generate the quiz for you.
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Input
+                                            placeholder="e.g., Photosynthesis"
+                                            value={aiTopic}
+                                            onChange={(e) => setAiTopic(e.target.value)}
+                                            disabled={isGenerating}
+                                        />
+                                        <Button type="button" onClick={handleAiGenerate} disabled={isGenerating}>
+                                            <Wand2 className="mr-2" />
+                                            {isGenerating ? 'Generating...' : 'Generate'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
 
@@ -219,7 +266,7 @@ export default function QuizEditorPage() {
                                                 <FormItem>
                                                     <FormLabel>Option {optionIndex + 1}</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder={`Option ${optionIndex + 1}`} {...field} />
+                                                        <Input placeholder={`Option ${optionIndex + 1}`} {...field} value={field.value || ''} />
                                                     </FormControl>
                                                      <FormMessage />
                                                 </FormItem>
@@ -278,8 +325,8 @@ export default function QuizEditorPage() {
                          <Button type="button" variant="outline" onClick={() => router.push('/teacher/quizzes')}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading || !form.formState.isValid}>
-                            {loading ? 'Saving...' : 'Save Quiz'}
+                        <Button type="submit" disabled={loading || isGenerating || !form.formState.isValid}>
+                            {loading || isGenerating ? 'Saving...' : 'Save Quiz'}
                         </Button>
                     </div>
                 </form>
@@ -287,4 +334,3 @@ export default function QuizEditorPage() {
         </>
     );
 }
-
