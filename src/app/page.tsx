@@ -36,6 +36,7 @@ export default function LoginPage() {
   const { login, signInWithGoogle, resetPassword } = useAuth();
   const { toast } = useToast();
   const [resetEmail, setResetEmail] = useState('');
+  const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -78,6 +79,7 @@ export default function LoginPage() {
     try {
       await resetPassword(resetEmail);
       toast({ title: 'Password Reset Email Sent', description: 'Check your inbox for a link to reset your password.'});
+      setIsResetDialogOpen(false);
     } catch (error: any) {
        toast({ variant: 'destructive', title: 'Error', description: error.message});
     }
@@ -117,7 +119,7 @@ export default function LoginPage() {
                     <FormItem>
                       <div className="flex items-center">
                          <FormLabel>Password</FormLabel>
-                          <AlertDialog>
+                          <AlertDialog open={isResetDialogOpen} onOpenChange={setIsResetDialogOpen}>
                             <AlertDialogTrigger asChild>
                               <Button variant="link" type="button" className="ml-auto inline-block text-sm underline text-accent">Forgot your password?</Button>
                             </AlertDialogTrigger>
