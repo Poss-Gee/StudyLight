@@ -140,7 +140,7 @@ export default function TeacherSubjectNotesPage() {
                   </AlertDialog>
 
                   <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/notes/${subject.id}/${note.id}`}>
+                    <Link href={`/teacher/notes/${subject.id}/${note.id}`}>
                       <ArrowRight className="h-5 w-5 text-primary" />
                       <span className="sr-only">View Note</span>
                     </Link>

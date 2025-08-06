@@ -42,7 +42,7 @@ export default function TeacherDashboardPage() {
       <div className="flex items-center">
         <h1 className="text-lg font-semibold md:text-2xl">Welcome, {userProfile?.name}!</h1>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" key={`${totalSubjects}-${totalQuizzes}`}>
         <Card className="hover:border-primary transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Manage Notes & Subjects</CardTitle>
