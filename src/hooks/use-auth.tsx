@@ -19,11 +19,13 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   updateProfile,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
 import type { UserProfile } from '@/lib/types';
+import { uploadProfilePicture } from '@/lib/firestore';
 
 interface AuthContextType {
   user: User | null;
@@ -34,7 +36,8 @@ interface AuthContextType {
   signup: (name: string, email: string, pass: string, role: 'student' | 'teacher') => Promise<any>;
   logout: () => Promise<void>;
   signInWithGoogle: (role: 'student' | 'teacher') => Promise<any>;
-  updateUserProfile: (name: string) => Promise<void>;
+  updateUserProfile: (name: string, photoFile?: File | null) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,10 +93,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     uid: string,
     name: string,
     email: string,
-    role: 'student' | 'teacher'
+    role: 'student' | 'teacher',
+    photoURL?: string | null
   ) => {
     const userDocRef = doc(db, 'users', uid);
-    const newUserProfile: UserProfile = { uid, name, email, role };
+    const newUserProfile: UserProfile = { uid, name, email, role, photoURL: photoURL || null };
     await setDoc(userDocRef, newUserProfile);
     setUserProfile(newUserProfile);
   };
@@ -113,6 +117,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth);
     router.push('/');
   };
+  
+  const resetPassword = async (email: string) => {
+    return sendPasswordResetEmail(auth, email);
+  }
 
   const signInWithGoogle = async (role: 'student' | 'teacher') => {
     const provider = new GoogleAuthProvider();
@@ -123,26 +131,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         result.user.uid,
         result.user.displayName || 'Anonymous',
         result.user.email!,
-        role
+        role,
+        result.user.photoURL
       );
     }
   };
 
-  const updateUserProfile = async (name: string) => {
+  const updateUserProfile = async (name: string, photoFile?: File | null) => {
     if (!user) throw new Error("Not authenticated");
     
-    // Update Firebase Auth profile
-    await updateProfile(user, { displayName: name });
+    const updates: { name?: string; photoURL?: string } = {};
 
-    // Update Firestore profile
-    const userDocRef = doc(db, 'users', user.uid);
-    await updateDoc(userDocRef, { name });
+    if (name !== userProfile?.name) {
+      updates.name = name;
+    }
+    
+    if (photoFile) {
+        const photoURL = await uploadProfilePicture(photoFile, user.uid);
+        updates.photoURL = photoURL;
+        await updateProfile(user, { photoURL });
+    }
 
-    // Update local state
-    setUserProfile(prev => prev ? { ...prev, name } : null);
+    if (Object.keys(updates).length > 0) {
+      // Update Auth profile
+      await updateProfile(user, { displayName: name });
+  
+      // Update Firestore profile
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, updates);
+  
+      // Update local state
+      setUserProfile(prev => prev ? { ...prev, ...updates } : null);
+    }
   };
   
-  const value = { user, userProfile, setUserProfile, loading, login, signup, logout, signInWithGoogle, updateUserProfile };
+  const value = { user, userProfile, setUserProfile, loading, login, signup, logout, signInWithGoogle, updateUserProfile, resetPassword };
   
   if(loading) {
     return <div className="flex items-center justify-center h-screen bg-background">Loading authentication...</div>

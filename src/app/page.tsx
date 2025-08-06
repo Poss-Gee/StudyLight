@@ -14,7 +14,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useState } from 'react';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -22,9 +33,9 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, signInWithGoogle, userProfile } = useAuth();
+  const { login, signInWithGoogle, resetPassword } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
+  const [resetEmail, setResetEmail] = useState('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,9 +60,6 @@ export default function LoginPage() {
   
   const handleGoogleSignIn = async () => {
     try {
-      // Since this is the login page, we can't know the user's role yet.
-      // After a successful Google Sign-In, if the user is new, they are defaulted to 'student'.
-      // They could have a screen after this to confirm their role if needed.
       await signInWithGoogle('student');
     } catch (error: any) {
        toast({
@@ -59,6 +67,19 @@ export default function LoginPage() {
         title: 'Google Sign-In Failed',
         description: error.message,
       });
+    }
+  }
+  
+  const handlePasswordReset = async () => {
+    if(!resetEmail) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Please enter your email address.' });
+       return;
+    }
+    try {
+      await resetPassword(resetEmail);
+      toast({ title: 'Password Reset Email Sent', description: 'Check your inbox for a link to reset your password.'});
+    } catch (error: any) {
+       toast({ variant: 'destructive', title: 'Error', description: error.message});
     }
   }
 
@@ -96,9 +117,30 @@ export default function LoginPage() {
                     <FormItem>
                       <div className="flex items-center">
                          <FormLabel>Password</FormLabel>
-                         <Link href="#" className="ml-auto inline-block text-sm underline text-accent">
-                            Forgot your password?
-                         </Link>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="link" type="button" className="ml-auto inline-block text-sm underline text-accent">Forgot your password?</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Reset Password</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Enter your email address and we&apos;ll send you a link to reset your password.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <Input 
+                                  type="email" 
+                                  placeholder="your.email@example.com"
+                                  value={resetEmail}
+                                  onChange={(e) => setResetEmail(e.target.value)}
+                                />
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handlePasswordReset}>Send Reset Link</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+
                       </div>
                       <FormControl>
                         <Input type="password" {...field} />

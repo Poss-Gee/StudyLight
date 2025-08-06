@@ -49,7 +49,7 @@ export default function ProfilePage() {
     return <div>Loading profile...</div>;
   }
   
-  const { name, email, role } = userProfile;
+  const { name, email, role, photoURL } = userProfile;
 
   const getSubjectName = (subjectId: string) => subjects.find(s => s.id === subjectId)?.name || 'N/A';
 
@@ -63,7 +63,7 @@ export default function ProfilePage() {
           <Card>
             <CardHeader className="flex flex-col items-center text-center">
               <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src={`https://placehold.co/100x100.png?text=${name?.charAt(0)}`} alt={name || 'User'} data-ai-hint="student portrait" />
+                <AvatarImage src={photoURL || `https://placehold.co/100x100.png?text=${name?.charAt(0)}`} alt={name || 'User'} data-ai-hint="student portrait" />
                 <AvatarFallback>{name ? name.charAt(0) : 'U'}</AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl">{name}</CardTitle>

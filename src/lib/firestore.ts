@@ -1,5 +1,5 @@
 
-import { db } from './firebase';
+import { db, storage } from './firebase';
 import {
   collection,
   getDocs,
@@ -12,7 +12,20 @@ import {
   where,
   runTransaction,
 } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import type { Subject, Note, Quiz, QuizHistory, UserProfile } from './types';
+
+
+export const uploadProfilePicture = async (file: File, userId: string): Promise<string> => {
+    const storageRef = ref(storage, `profile-pictures/${userId}/${file.name}`);
+    await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(storageRef);
+    
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, { photoURL: downloadURL });
+    
+    return downloadURL;
+}
 
 // --- Subject Functions ---
 

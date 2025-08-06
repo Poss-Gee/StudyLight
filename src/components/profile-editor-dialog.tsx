@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, type ReactNode, useEffect } from 'react';
+import { useState, type ReactNode, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,8 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Edit } from 'lucide-react';
 
 interface ProfileEditorDialogProps {
   children: ReactNode;
@@ -27,14 +29,30 @@ export function ProfileEditorDialog({ children, onProfileUpdated }: ProfileEdito
   const { userProfile, updateUserProfile } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(userProfile?.name || '');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(userProfile?.photoURL || null);
   const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (userProfile) {
       setName(userProfile.name || '');
+      setPhotoPreview(userProfile.photoURL || null);
     }
   }, [userProfile]);
+  
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSave = async () => {
     if (!name) {
@@ -44,8 +62,8 @@ export function ProfileEditorDialog({ children, onProfileUpdated }: ProfileEdito
 
     setLoading(true);
     try {
-      await updateUserProfile(name);
-      onProfileUpdated({ ...userProfile, name });
+      await updateUserProfile(name, photoFile);
+      // The auth context will update the userProfile, and the useEffect will catch it.
       toast({ title: 'Success', description: 'Your profile has been updated.' });
       setIsOpen(false);
     } catch (error: any) {
@@ -67,6 +85,29 @@ export function ProfileEditorDialog({ children, onProfileUpdated }: ProfileEdito
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="flex flex-col items-center gap-4">
+             <div className="relative">
+                <Avatar className="h-24 w-24">
+                  <AvatarImage src={photoPreview || `https://placehold.co/100x100.png?text=${name?.charAt(0)}`} alt={name || 'User'} />
+                  <AvatarFallback>{name ? name.charAt(0) : 'U'}</AvatarFallback>
+                </Avatar>
+                <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="absolute bottom-0 right-0 rounded-full"
+                    onClick={() => fileInputRef.current?.click()}>
+                    <Edit className="h-4 w-4"/>
+                    <span className="sr-only">Change picture</span>
+                </Button>
+                <Input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                />
+            </div>
+          </div>
           <div className="grid grid-cols-4 items-center gap-4">
             <Label htmlFor="name" className="text-right">
               Name

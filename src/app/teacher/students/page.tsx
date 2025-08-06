@@ -76,7 +76,7 @@ export default function StudentsPage() {
                     <TableCell>
                         <div className="flex items-center gap-4">
                         <Avatar className="h-10 w-10">
-                            <AvatarImage src={`https://placehold.co/100x100.png?text=${student.name?.charAt(0)}`} alt={student.name || ''} data-ai-hint="student portrait" />
+                            <AvatarImage src={student.photoURL || `https://placehold.co/100x100.png?text=${student.name?.charAt(0)}`} alt={student.name || ''} data-ai-hint="student portrait" />
                             <AvatarFallback>{student.name?.charAt(0) || 'S'}</AvatarFallback>
                         </Avatar>
                         <div>

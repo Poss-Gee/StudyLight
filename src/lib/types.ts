@@ -8,7 +8,7 @@ export type Subject = {
 };
 
 export type Note = {
-  id: string;
+  id:string;
   subject: string;
   title: string;
   content: string;
@@ -43,5 +43,6 @@ export type UserProfile = {
   email: string | null;
   name: string | null;
   role: 'student' | 'teacher';
+  photoURL?: string | null;
   quizHistory?: QuizHistory[]; // Optional: can be a subcollection
 };
