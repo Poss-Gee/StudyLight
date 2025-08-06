@@ -153,3 +153,12 @@ export const saveQuizResult = async (userId: string, result: Omit<QuizHistory, '
         });
     }
 }
+
+
+// --- Student Data Functions ---
+export const getStudents = async (): Promise<UserProfile[]> => {
+  const usersCol = collection(db, 'users');
+  const q = query(usersCol, where('role', '==', 'student'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => doc.data() as UserProfile);
+};
