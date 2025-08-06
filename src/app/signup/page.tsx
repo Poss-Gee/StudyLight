@@ -4,50 +4,42 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
-import { Separator } from '@/components/ui/separator';
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
         <Card className="shadow-2xl">
           <CardHeader className="space-y-1 text-center">
-            <div className="flex justify-center mb-4">
+             <div className="flex justify-center mb-4">
               <Logo />
             </div>
-            <CardTitle className="text-2xl font-bold">Welcome Back!</CardTitle>
-            <CardDescription>Enter your credentials to access your account</CardDescription>
+            <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+            <CardDescription>Enter your information to get started</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" placeholder="John Doe" required />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input id="email" type="email" placeholder="student@example.com" required />
               </div>
               <div className="space-y-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <Link href="#" className="ml-auto inline-block text-sm underline text-accent">
-                    Forgot your password?
-                  </Link>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <Input id="password" type="password" required />
               </div>
               <Button type="submit" className="w-full !mt-6" asChild>
-                <Link href="/dashboard">Login</Link>
+                <Link href="/dashboard">Create Account</Link>
               </Button>
             </div>
-            <Separator className="my-6" />
-            <div className="space-y-4">
-              <Button variant="outline" className="w-full">
-                Login with Google
-              </Button>
-              <div className="mt-4 text-center text-sm">
-                Don&apos;t have an account?{' '}
-                <Link href="/signup" className="underline text-accent">
-                  Sign up
-                </Link>
-              </div>
+            <div className="mt-4 text-center text-sm">
+              Already have an account?{' '}
+              <Link href="/" className="underline text-accent">
+                Log in
+              </Link>
             </div>
           </CardContent>
         </Card>
