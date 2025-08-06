@@ -2,36 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Get a user document to check their role
-    function isTeacher(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role == 'teacher';
-    }
-
-    // User profiles can be created by anyone, but only the owner can read or update their own profile.
+    
+    // User profile data
     match /users/{userId} {
+      // Anyone can create a user profile (signup)
       allow create: if request.auth != null;
+      // Only the authenticated owner can read or update their own profile
       allow read, update: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Subjects can be read by any authenticated user.
-    // Only teachers can create, update, or delete subjects.
+    // Subjects can be read by any authenticated user
+    // Subjects can be created, updated, or deleted only by teachers
     match /subjects/{subjectId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && isTeacher(request.auth.uid);
-    }
-    
-    // Notes can be read by any authenticated user.
-    // Only teachers can create, update, or delete notes.
-    match /notes/{noteId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && isTeacher(request.auth.uid);
+      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
 
-    // Quizzes can be read by any authenticated user.
-    // Only teachers can create, update, or delete quizzes.
-    match /quizzes/{quizId} {
+    // Notes can be read by any authenticated user
+    // Notes can be created, updated, or deleted only by teachers
+    match /notes/{noteId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && isTeacher(request.auth.uid);
+      allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
+    
+    // Quizzes can be read by any authenticated user
+    // Quizzes can be created, updated, or deleted only by teachers
+    match /quizzes/{quizId} {
+        allow read: if request.auth != null;
+        allow create, update, delete: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
     }
   }
 }
