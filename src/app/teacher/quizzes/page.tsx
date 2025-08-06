@@ -88,10 +88,10 @@ export default function TeacherQuizzesPage() {
                   <CardContent className="flex-grow">
                      <Badge variant="secondary">{getSubjectName(quiz.subject)}</Badge>
                   </CardContent>
-                  <CardFooter className="flex justify-end gap-2">
+                  <CardFooter className="flex flex-wrap justify-end gap-2">
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                           <Button variant="destructive" size="sm">
+                           <Button variant="destructive" size="sm" className="flex-grow sm:flex-grow-0">
                               <Trash2 className="mr-2 h-4 w-4" /> Delete
                            </Button>
                         </AlertDialogTrigger>
@@ -108,12 +108,12 @@ export default function TeacherQuizzesPage() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                     <Button variant="outline" size="sm" asChild>
+                     <Button variant="outline" size="sm" asChild className="flex-grow sm:flex-grow-0">
                         <Link href={`/teacher/quizzes/${quiz.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit Quiz
                         </Link>
                      </Button>
-                     <Button asChild size="sm">
+                     <Button asChild size="sm" className="flex-grow sm:flex-grow-0">
                        {/* This link can later go to a results page */}
                       <Link href="#">
                         View Results <ArrowRight className="ml-2 h-4 w-4" />
