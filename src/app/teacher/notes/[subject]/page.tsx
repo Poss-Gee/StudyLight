@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { PlusCircle, ArrowRight, Edit, Trash2 } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,11 +21,14 @@ import {
 import { NoteEditorDialog } from '@/components/note-editor-dialog';
 import { useState } from 'react';
 
-export default function TeacherSubjectNotesPage({ params }: { params: { subject: string } }) {
-  const subject = subjects.find((s) => s.id === params.subject);
+export default function TeacherSubjectNotesPage() {
+  const params = useParams();
+  const subjectId = params.subject as string;
+
+  const subject = subjects.find((s) => s.id === subjectId);
   
   // In a real app, you'd fetch this data, but we'll filter the dummy data
-  const [notes, setNotes] = useState<Note[]>(allNotes.filter((note) => note.subject === params.subject));
+  const [notes, setNotes] = useState<Note[]>(allNotes.filter((note) => note.subject === subjectId));
 
   if (!subject) {
     notFound();
@@ -132,4 +135,3 @@ export default function TeacherSubjectNotesPage({ params }: { params: { subject:
     </>
   );
 }
-
