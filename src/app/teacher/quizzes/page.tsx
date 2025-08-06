@@ -68,8 +68,7 @@ export default function TeacherQuizzesPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">Manage Quizzes</h1>
         <Button asChild>
-          {/* This link can later go to a quiz creation page */}
-          <Link href="#">
+          <Link href="/teacher/quizzes/new/edit">
             <PlusCircle className="mr-2 h-4 w-4" /> Create New Quiz
           </Link>
         </Button>
@@ -110,8 +109,7 @@ export default function TeacherQuizzesPage() {
                         </AlertDialogContent>
                       </AlertDialog>
                      <Button variant="outline" size="sm" asChild>
-                        {/* This link can later go to a quiz editing page */}
-                        <Link href="#">
+                        <Link href={`/teacher/quizzes/${quiz.id}/edit`}>
                             <Edit className="mr-2" /> Edit Quiz
                         </Link>
                      </Button>
@@ -131,7 +129,7 @@ export default function TeacherQuizzesPage() {
                         <CardDescription>Get started by creating a new quiz.</CardDescription>
                          <CardContent className="mt-4">
                             <Button asChild>
-                                <Link href="#">
+                                <Link href="/teacher/quizzes/new/edit">
                                     <PlusCircle className="mr-2 h-4 w-4" /> Create First Quiz
                                 </Link>
                             </Button>

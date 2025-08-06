@@ -4,9 +4,9 @@
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookPlus, Users, HelpCircle } from 'lucide-react';
+import { BookPlus, Users, HelpCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getSubjects, getQuizzes } from '@/lib/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -18,31 +18,37 @@ export default function TeacherDashboardPage() {
   
   const totalStudents = 120; // Dummy data for now
 
-  useEffect(() => {
-    const fetchData = async () => {
-        try {
-            const [subjects, quizzes] = await Promise.all([
-                getSubjects(),
-                getQuizzes()
-            ]);
-            setTotalSubjects(subjects.length);
-            setTotalQuizzes(quizzes.length);
-        } catch (error) {
-            console.error("Failed to fetch dashboard data:", error);
-        } finally {
-            setLoading(false);
-        }
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+        const [subjects, quizzes] = await Promise.all([
+            getSubjects(),
+            getQuizzes()
+        ]);
+        setTotalSubjects(subjects.length);
+        setTotalQuizzes(quizzes.length);
+    } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+    } finally {
+        setLoading(false);
     }
-    fetchData();
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
 
   return (
     <>
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <h1 className="text-lg font-semibold md:text-2xl">Welcome, {userProfile?.name}!</h1>
+         <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Data
+        </Button>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3" key={`${totalSubjects}-${totalQuizzes}`}>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:border-primary transition-colors">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Manage Notes & Subjects</CardTitle>

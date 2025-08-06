@@ -1,3 +1,4 @@
+
 import { db } from './firebase';
 import {
   collection,
@@ -102,6 +103,19 @@ export const getQuiz = async (id: string): Promise<Quiz | null> => {
     }
     return null;
 }
+
+export const saveQuiz = async (quiz: Omit<Quiz, 'id'>, id?: string): Promise<string> => {
+  if (id) {
+    const quizDoc = doc(db, 'quizzes', id);
+    await updateDoc(quizDoc, quiz);
+    return id;
+  } else {
+    const quizzesCol = collection(db, 'quizzes');
+    const newDoc = await addDoc(quizzesCol, quiz);
+    return newDoc.id;
+  }
+};
+
 
 export const deleteQuiz = async (id: string): Promise<void> => {
     const quizDoc = doc(db, 'quizzes', id);
