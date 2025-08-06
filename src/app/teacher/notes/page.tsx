@@ -83,8 +83,9 @@ export default function TeacherNotesPage() {
                 <CardTitle className="text-xl text-primary">{subject.name}</CardTitle>
                 <CardDescription>{subject.description}</CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow">
+              <CardContent className="flex-grow flex gap-2">
                  <Badge variant="secondary">{subject.noteCount} Notes</Badge>
+                 <Badge variant="secondary">{subject.quizCount} Quizzes</Badge>
               </CardContent>
               <CardFooter className="flex justify-end gap-2">
                   <AlertDialog>

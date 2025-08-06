@@ -10,8 +10,7 @@ import {
   deleteDoc,
   query,
   where,
-  Timestamp,
-  setDoc,
+  runTransaction,
 } from 'firebase/firestore';
 import type { Subject, Note, Quiz, QuizHistory, UserProfile } from './types';
 
@@ -45,9 +44,10 @@ export const saveSubject = async (subject: Omit<Subject, 'id'>, id?: string): Pr
 };
 
 export const deleteSubject = async (id: string): Promise<void> => {
+    // This is more complex now. You'd also need to delete all notes and quizzes for this subject.
+    // For simplicity, we'll just delete the subject doc for now.
     const subjectDoc = doc(db, 'subjects', id);
     await deleteDoc(subjectDoc);
-    // You might also want to delete related notes and quizzes here
 }
 
 
@@ -70,20 +70,52 @@ export const getNote = async (id: string): Promise<Note | null> => {
 }
 
 export const saveNote = async (note: Omit<Note, 'id'>, id?: string): Promise<string> => {
-  if (id) {
-    const noteDoc = doc(db, 'notes', id);
-    await updateDoc(noteDoc, note);
-    return id;
-  } else {
-    const notesCol = collection(db, 'notes');
-    const newDoc = await addDoc(notesCol, note);
-    return newDoc.id;
-  }
+  const subjectDocRef = doc(db, 'subjects', note.subject);
+  
+  return await runTransaction(db, async (transaction) => {
+    const subjectDoc = await transaction.get(subjectDocRef);
+    if (!subjectDoc.exists()) {
+      throw "Subject does not exist!";
+    }
+
+    let noteId: string;
+    if (id) {
+      // It's an update, so count doesn't change
+      const noteDoc = doc(db, 'notes', id);
+      transaction.update(noteDoc, note);
+      noteId = id;
+    } else {
+      // It's a new note, so we increment the count
+      const newNoteRef = doc(collection(db, 'notes'));
+      transaction.set(newNoteRef, note);
+      const newNoteCount = (subjectDoc.data().noteCount || 0) + 1;
+      transaction.update(subjectDocRef, { noteCount: newNoteCount });
+      noteId = newNoteRef.id;
+    }
+    return noteId;
+  });
 };
 
-export const deleteNote = async (id: string): Promise<void> => {
-    const noteDoc = doc(db, 'notes', id);
-    await deleteDoc(noteDoc);
+export const deleteNote = async (noteId: string): Promise<void> => {
+    const noteDocRef = doc(db, 'notes', noteId);
+    
+    await runTransaction(db, async (transaction) => {
+        const noteDoc = await transaction.get(noteDocRef);
+        if (!noteDoc.exists()) {
+            throw "Note does not exist!";
+        }
+
+        const subjectId = noteDoc.data().subject;
+        const subjectDocRef = doc(db, 'subjects', subjectId);
+        
+        const subjectDoc = await transaction.get(subjectDocRef);
+        if(subjectDoc.exists()){
+            const newNoteCount = Math.max(0, (subjectDoc.data().noteCount || 0) - 1);
+            transaction.update(subjectDocRef, { noteCount: newNoteCount });
+        }
+        
+        transaction.delete(noteDocRef);
+    });
 }
 
 
@@ -105,21 +137,53 @@ export const getQuiz = async (id: string): Promise<Quiz | null> => {
 }
 
 export const saveQuiz = async (quiz: Omit<Quiz, 'id'>, id?: string): Promise<string> => {
-  if (id) {
-    const quizDoc = doc(db, 'quizzes', id);
-    await updateDoc(quizDoc, quiz);
-    return id;
-  } else {
-    const quizzesCol = collection(db, 'quizzes');
-    const newDoc = await addDoc(quizzesCol, quiz);
-    return newDoc.id;
-  }
+  const subjectDocRef = doc(db, 'subjects', quiz.subject);
+  
+  return await runTransaction(db, async (transaction) => {
+    const subjectDoc = await transaction.get(subjectDocRef);
+    if (!subjectDoc.exists()) {
+      throw "Subject does not exist!";
+    }
+
+    let quizId: string;
+    if (id) {
+      // It's an update, so count doesn't change
+      const quizDoc = doc(db, 'quizzes', id);
+      transaction.update(quizDoc, quiz);
+      quizId = id;
+    } else {
+      // It's a new quiz, so we increment the count
+      const newQuizRef = doc(collection(db, 'quizzes'));
+      transaction.set(newQuizRef, quiz);
+      const newQuizCount = (subjectDoc.data().quizCount || 0) + 1;
+      transaction.update(subjectDocRef, { quizCount: newQuizCount });
+      quizId = newQuizRef.id;
+    }
+    return quizId;
+  });
 };
 
 
-export const deleteQuiz = async (id: string): Promise<void> => {
-    const quizDoc = doc(db, 'quizzes', id);
-    await deleteDoc(quizDoc);
+export const deleteQuiz = async (quizId: string): Promise<void> => {
+    const quizDocRef = doc(db, 'quizzes', quizId);
+
+    await runTransaction(db, async (transaction) => {
+        const quizDoc = await transaction.get(quizDocRef);
+        if (!quizDoc.exists()) {
+            throw "Quiz does not exist!";
+        }
+
+        const subjectId = quizDoc.data().subject;
+        const subjectDocRef = doc(db, 'subjects', subjectId);
+
+        const subjectDoc = await transaction.get(subjectDocRef);
+        if (subjectDoc.exists()) {
+            const newQuizCount = Math.max(0, (subjectDoc.data().quizCount || 0) - 1);
+            transaction.update(subjectDocRef, { quizCount: newQuizCount });
+        }
+
+        transaction.delete(quizDocRef);
+    });
 }
 
 

@@ -41,7 +41,7 @@ export function SubjectEditorDialog({ children, subject = null, onSubjectSaved }
     
     setLoading(true);
     try {
-        const newSubjectData = {
+        const newSubjectData: Omit<Subject, 'id'> = {
           name,
           description,
           image: subject?.image || `https://placehold.co/600x400.png?text=${name.charAt(0)}`,
