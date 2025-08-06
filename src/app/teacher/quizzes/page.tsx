@@ -92,7 +92,7 @@ export default function TeacherQuizzesPage() {
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="destructive" size="sm">
-                              <Trash2 />
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
                            </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
@@ -110,7 +110,7 @@ export default function TeacherQuizzesPage() {
                       </AlertDialog>
                      <Button variant="outline" size="sm" asChild>
                         <Link href={`/teacher/quizzes/${quiz.id}/edit`}>
-                            <Edit className="mr-2" /> Edit Quiz
+                            <Edit className="mr-2 h-4 w-4" /> Edit Quiz
                         </Link>
                      </Button>
                      <Button asChild size="sm">
