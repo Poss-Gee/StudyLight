@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -18,9 +17,12 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/logo';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { logout } = useAuth();
+
 
   const studentNavItems = [
     { href: '/dashboard', icon: Home, label: 'Dashboard' },
@@ -54,12 +56,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </nav>
       </div>
       <div className="mt-auto p-4">
-        <Link href="/">
-          <Button variant="ghost" className="w-full justify-start">
+        <Button variant="ghost" className="w-full justify-start" onClick={() => logout()}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout
-          </Button>
-        </Link>
+        </Button>
       </div>
     </div>
   );

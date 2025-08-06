@@ -1,14 +1,26 @@
+
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { userProfile, subjects } from '@/lib/dummy-data';
+import { subjects, userProfile as dummyProfile } from '@/lib/dummy-data';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { LogOut } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function ProfilePage() {
-  const { name, email, role, quizHistory } = userProfile;
+  const { user, userProfile, logout } = useAuth();
+
+  if (!user || !userProfile) {
+    return <div>Loading profile...</div>;
+  }
+  
+  const { name, email, role } = userProfile;
+  // TODO: Quiz history should be fetched from Firestore
+  const { quizHistory } = dummyProfile; 
+
   return (
     <>
       <div className="flex items-center">
@@ -19,19 +31,17 @@ export default function ProfilePage() {
           <Card>
             <CardHeader className="flex flex-col items-center text-center">
               <Avatar className="h-24 w-24 mb-4">
-                <AvatarImage src="https://placehold.co/100x100" alt={name} data-ai-hint="student portrait" />
-                <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={`https://placehold.co/100x100.png?text=${name?.charAt(0)}`} alt={name || 'User'} data-ai-hint="student portrait" />
+                <AvatarFallback>{name ? name.charAt(0) : 'U'}</AvatarFallback>
               </Avatar>
               <CardTitle className="text-2xl">{name}</CardTitle>
               <CardDescription>{email}</CardDescription>
-              <Badge variant="outline" className="mt-2">{role}</Badge>
+              <Badge variant="outline" className="mt-2 capitalize">{role}</Badge>
             </CardHeader>
             <CardContent>
-               <Button variant="outline" className="w-full" asChild>
-                <Link href="/">
+               <Button variant="outline" className="w-full" onClick={() => logout()}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Logout
-                </Link>
               </Button>
             </CardContent>
           </Card>
@@ -53,7 +63,7 @@ export default function ProfilePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {quizHistory.map((history) => {
+                  {quizHistory.length > 0 ? quizHistory.map((history) => {
                     const subject = subjects.find(s => s.id === history.subject);
                     return (
                     <TableRow key={history.id}>
@@ -64,7 +74,11 @@ export default function ProfilePage() {
                       <TableCell className={`text-right font-bold ${history.score >= 80 ? 'text-green-400' : history.score >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{history.score}%</TableCell>
                       <TableCell>{history.date}</TableCell>
                     </TableRow>
-                  )})}
+                  )}) : (
+                     <TableRow>
+                        <TableCell colSpan={4} className="text-center">No quiz history yet.</TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>

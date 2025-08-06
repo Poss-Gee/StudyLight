@@ -1,11 +1,15 @@
 
+'use client';
+
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookPlus, Users, HelpCircle } from 'lucide-react';
-import { userProfile, subjects } from '@/lib/dummy-data';
+import { subjects } from '@/lib/dummy-data';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function TeacherDashboardPage() {
+  const { userProfile } = useAuth();
   const totalStudents = 120; // Dummy data
   const totalSubjects = subjects.length;
   const totalQuizzes = 5; // Dummy data
@@ -13,7 +17,7 @@ export default function TeacherDashboardPage() {
   return (
     <>
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {userProfile.name}!</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {userProfile?.name}!</h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:border-primary transition-colors">

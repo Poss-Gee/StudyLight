@@ -1,14 +1,17 @@
+
+'use client';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookCopy, HelpCircle, BarChart2 } from 'lucide-react';
-import { userProfile } from '@/lib/dummy-data';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardPage() {
+    const { userProfile } = useAuth();
   return (
     <>
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {userProfile.name}!</h1>
+        <h1 className="text-lg font-semibold md:text-2xl">Welcome, {userProfile?.name}!</h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="hover:border-primary transition-colors">
