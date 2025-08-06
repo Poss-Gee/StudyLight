@@ -21,13 +21,7 @@ import {
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter, usePathname } from 'next/navigation';
-
-export type UserProfile = {
-  uid: string;
-  email: string | null;
-  name: string | null;
-  role: 'student' | 'teacher';
-};
+import type { UserProfile } from '@/lib/types';
 
 interface AuthContextType {
   user: User | null;

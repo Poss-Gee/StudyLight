@@ -1,12 +1,15 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { quizzes, type Question } from '@/lib/dummy-data';
+import { getQuiz, saveQuizResult } from '@/lib/firestore';
+import { type Quiz, type Question } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { CheckCircle, XCircle, Award } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 type SelectedAnswers = {
   [key: string]: number;
@@ -15,35 +18,64 @@ type SelectedAnswers = {
 export default function QuizResultsPage() {
   const params = useParams();
   const quizId = params.quizId as string;
+  
+  const { user } = useAuth();
+  const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [score, setScore] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<SelectedAnswers | null>(null);
-
-  const quiz = quizzes.find((q) => q.id === quizId);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== 'undefined' && quiz) {
-      const storedAnswers = localStorage.getItem(`quiz-${quiz.id}-answers`);
-      if (storedAnswers) {
-        const parsedAnswers: SelectedAnswers = JSON.parse(storedAnswers);
-        setSelectedAnswers(parsedAnswers);
+    if (!quizId) return;
 
-        let correctCount = 0;
-        quiz.questions.forEach((q) => {
-          if (parsedAnswers[q.id] === q.correctAnswer) {
-            correctCount++;
+    const fetchQuizAndCalcResults = async () => {
+      try {
+        const quizData = await getQuiz(quizId);
+        if (!quizData) {
+          notFound();
+          return;
+        }
+        setQuiz(quizData);
+
+        const storedAnswers = localStorage.getItem(`quiz-${quizData.id}-answers`);
+        if (storedAnswers) {
+          const parsedAnswers: SelectedAnswers = JSON.parse(storedAnswers);
+          setSelectedAnswers(parsedAnswers);
+
+          let correctCount = 0;
+          quizData.questions.forEach((q) => {
+            if (parsedAnswers[q.id] === q.correctAnswer) {
+              correctCount++;
+            }
+          });
+          const calculatedScore = Math.round((correctCount / quizData.questions.length) * 100);
+          setScore(calculatedScore);
+
+          if (user) {
+             await saveQuizResult(user.uid, {
+                quizId: quizData.id,
+                quizTitle: quizData.title,
+                subject: quizData.subject,
+                score: calculatedScore,
+             });
           }
-        });
-        setScore(Math.round((correctCount / quiz.questions.length) * 100));
+        }
+      } catch (error) {
+         console.error("Error loading quiz results: ", error);
+      } finally {
+        setLoading(false);
       }
-    }
-  }, [quiz]);
+    };
+    
+    fetchQuizAndCalcResults();
+  }, [quizId, user]);
 
-  if (!quiz) {
-    return notFound();
-  }
-
-  if (selectedAnswers === null) {
+  if (loading) {
     return <div>Loading results...</div>;
+  }
+  
+  if (!quiz || selectedAnswers === null) {
+    return <div>Could not load quiz results. Please try taking the quiz again.</div>;
   }
 
   return (
@@ -59,7 +91,7 @@ export default function QuizResultsPage() {
         <CardContent>
           <p className="text-5xl font-bold text-primary">{score}%</p>
           <p className="text-muted-foreground mt-2">
-            You answered {Object.values(selectedAnswers).filter((ans, i) => ans === quiz.questions[i].correctAnswer).length} out of {quiz.questions.length} questions correctly.
+            You answered {quiz.questions.filter(q => selectedAnswers[q.id] === q.correctAnswer).length} out of {quiz.questions.length} questions correctly.
           </p>
         </CardContent>
       </Card>

@@ -6,7 +6,8 @@ import { notFound, useParams } from 'next/navigation';
 import { PlusCircle, ArrowRight, Edit, Trash2 } from 'lucide-react';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { subjects, notes as allNotes, type Note } from '@/lib/dummy-data';
+import { getSubject, getNotesForSubject, deleteNote as deleteNoteFromDB } from '@/lib/firestore';
+import { type Note, type Subject } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,37 +20,69 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { NoteEditorDialog } from '@/components/note-editor-dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TeacherSubjectNotesPage() {
   const params = useParams();
   const subjectId = params.subject as string;
+  const { toast } = useToast();
 
-  const subject = subjects.find((s) => s.id === subjectId);
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotesAndSubject = async () => {
+    if (!subjectId) return;
+    setLoading(true);
+    try {
+      const [subjectData, notesData] = await Promise.all([
+        getSubject(subjectId),
+        getNotesForSubject(subjectId)
+      ]);
+
+      if (!subjectData) {
+        notFound();
+        return;
+      }
+
+      setSubject(subjectData);
+      setNotes(notesData);
+    } catch (error) {
+      console.error("Failed to fetch data:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch data for this subject.' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotesAndSubject();
+  }, [subjectId]);
+
   
-  // In a real app, you'd fetch this data, but we'll filter the dummy data
-  const [notes, setNotes] = useState<Note[]>(allNotes.filter((note) => note.subject === subjectId));
+  const handleNoteSaved = () => {
+     fetchNotesAndSubject(); // Refetch everything
+  }
+
+  const handleDeleteNote = async (noteId: string) => {
+     try {
+       await deleteNoteFromDB(noteId);
+       toast({ title: 'Success', description: 'Note deleted successfully.' });
+       fetchNotesAndSubject();
+     } catch (error) {
+       console.error("Failed to delete note:", error);
+       toast({ variant: 'destructive', title: 'Error', description: 'Could not delete note.' });
+     }
+  }
+
+  if (loading) {
+    return <Skeleton className="h-96 w-full" />;
+  }
 
   if (!subject) {
     notFound();
-  }
-  
-  const handleNoteSaved = (note: Note) => {
-     setNotes(prevNotes => {
-      const existingNoteIndex = prevNotes.findIndex(n => n.id === note.id);
-      if (existingNoteIndex > -1) {
-        const newNotes = [...prevNotes];
-        newNotes[existingNoteIndex] = note;
-        return newNotes;
-      } else {
-        return [...prevNotes, note];
-      }
-    });
-  }
-
-  const handleDeleteNote = (noteId: string) => {
-     setNotes(prevNotes => prevNotes.filter(n => n.id !== noteId));
-     // In a real app, you'd also make an API call to delete from the DB
   }
 
   return (

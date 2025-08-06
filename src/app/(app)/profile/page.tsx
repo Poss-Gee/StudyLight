@@ -4,22 +4,49 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { subjects, userProfile as dummyProfile } from '@/lib/dummy-data';
+import { type Subject, type QuizHistory } from '@/lib/types';
+import { getSubjects, getUserQuizHistory } from '@/lib/firestore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
 
 export default function ProfilePage() {
   const { user, userProfile, logout } = useAuth();
+  const [quizHistory, setQuizHistory] = useState<QuizHistory[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  if (!user || !userProfile) {
+  useEffect(() => {
+    if (!user) return;
+    
+    const fetchData = async () => {
+      try {
+        const [history, subjectsData] = await Promise.all([
+          getUserQuizHistory(user.uid),
+          getSubjects(),
+        ]);
+        setQuizHistory(history.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        setSubjects(subjectsData);
+      } catch (error) {
+        console.error("Failed to fetch profile data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
+
+  if (loading || !userProfile) {
     return <div>Loading profile...</div>;
   }
   
   const { name, email, role } = userProfile;
-  // TODO: Quiz history should be fetched from Firestore
-  const { quizHistory } = dummyProfile; 
+
+  const getSubjectName = (subjectId: string) => subjects.find(s => s.id === subjectId)?.name || 'N/A';
 
   return (
     <>
@@ -63,18 +90,16 @@ export default function ProfilePage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {quizHistory.length > 0 ? quizHistory.map((history) => {
-                    const subject = subjects.find(s => s.id === history.subject);
-                    return (
+                  {quizHistory.length > 0 ? quizHistory.map((history) => (
                     <TableRow key={history.id}>
                       <TableCell className="font-medium">{history.quizTitle}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary">{subject?.name || 'N/A'}</Badge>
+                        <Badge variant="secondary">{getSubjectName(history.subject)}</Badge>
                       </TableCell>
                       <TableCell className={`text-right font-bold ${history.score >= 80 ? 'text-green-400' : history.score >= 50 ? 'text-yellow-400' : 'text-red-400'}`}>{history.score}%</TableCell>
-                      <TableCell>{history.date}</TableCell>
+                      <TableCell>{format(new Date(history.date), 'PP')}</TableCell>
                     </TableRow>
-                  )}) : (
+                  )) : (
                      <TableRow>
                         <TableCell colSpan={4} className="text-center">No quiz history yet.</TableCell>
                     </TableRow>

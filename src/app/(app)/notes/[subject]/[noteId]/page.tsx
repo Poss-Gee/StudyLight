@@ -1,10 +1,64 @@
-import { notes, subjects } from '@/lib/dummy-data';
-import { notFound } from 'next/navigation';
-import { Badge } from '@/components/ui/badge';
 
-export default function NoteDetailPage({ params }: { params: { subject: string, noteId: string } }) {
-  const note = notes.find((n) => n.id === params.noteId && n.subject === params.subject);
-  const subject = subjects.find((s) => s.id === params.subject);
+'use client';
+
+import { getNote, getSubject } from '@/lib/firestore';
+import { type Note, type Subject } from '@/lib/types';
+import { notFound, useParams } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
+import { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+export default function NoteDetailPage() {
+  const params = useParams();
+  const { subject: subjectId, noteId } = params;
+
+  const [note, setNote] = useState<Note | null>(null);
+  const [subject, setSubject] = useState<Subject | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!noteId || !subjectId) return;
+
+    const fetchData = async () => {
+      try {
+        const [noteData, subjectData] = await Promise.all([
+          getNote(noteId as string),
+          getSubject(subjectId as string),
+        ]);
+
+        if (!noteData || !subjectData || noteData.subject !== subjectData.id) {
+          notFound();
+          return;
+        }
+
+        setNote(noteData);
+        setSubject(subjectData);
+      } catch (error) {
+        console.error("Failed to fetch note details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [noteId, subjectId]);
+  
+
+  if (loading) {
+     return (
+        <div className="max-w-4xl mx-auto">
+            <div className="space-y-4 mb-8">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-10 w-3/4" />
+            </div>
+            <div className="space-y-6">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+            </div>
+        </div>
+    );
+  }
 
   if (!note || !subject) {
     notFound();

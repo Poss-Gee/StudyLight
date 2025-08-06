@@ -16,33 +16,52 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import type { Note, Subject } from '@/lib/dummy-data';
+import type { Note, Subject } from '@/lib/types';
+import { saveNote } from '@/lib/firestore';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface NoteEditorDialogProps {
   children: ReactNode;
   subject: Subject;
   note?: Note | null;
-  onNoteSaved: (note: Note) => void;
+  onNoteSaved: () => void;
 }
 
 export function NoteEditorDialog({ children, subject, note = null, onNoteSaved }: NoteEditorDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSave = () => {
-    const newNote: Note = {
-      id: note?.id || `note-${Date.now()}`,
-      subject: subject.id,
-      title,
-      content,
-    };
-    onNoteSaved(newNote);
-    setIsOpen(false);
-    // Reset form if we're creating a new note
-    if (!note) {
-        setTitle('');
-        setContent('');
+  const handleSave = async () => {
+    if (!title || !content) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
+        return;
+    }
+    
+    setLoading(true);
+    try {
+        const newNoteData = {
+          subject: subject.id,
+          title,
+          content,
+        };
+        await saveNote(newNoteData, note?.id);
+        
+        toast({ title: 'Success', description: `Note ${note ? 'updated' : 'created'} successfully.` });
+        onNoteSaved();
+        setIsOpen(false);
+        if (!note) {
+            setTitle('');
+            setContent('');
+        }
+    } catch(error) {
+        console.error("Failed to save note:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not save the note.' });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -86,7 +105,7 @@ export function NoteEditorDialog({ children, subject, note = null, onNoteSaved }
             <DialogClose asChild>
                 <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleSave}>Save Note</Button>
+            <Button onClick={handleSave} disabled={loading}>{loading ? 'Saving...' : 'Save Note'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

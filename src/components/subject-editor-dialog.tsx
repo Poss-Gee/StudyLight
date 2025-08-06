@@ -16,34 +16,53 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import type { Subject } from '@/lib/dummy-data';
+import type { Subject } from '@/lib/types';
+import { saveSubject } from '@/lib/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubjectEditorDialogProps {
   children: ReactNode;
   subject?: Subject | null;
-  onSubjectSaved: (subject: Subject) => void;
+  onSubjectSaved: () => void;
 }
 
 export function SubjectEditorDialog({ children, subject = null, onSubjectSaved }: SubjectEditorDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState(subject?.name || '');
   const [description, setDescription] = useState(subject?.description || '');
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSave = () => {
-    const newSubject: Subject = {
-      id: subject?.id || name.toLowerCase().replace(/\s+/g, '-'),
-      name,
-      description,
-      image: subject?.image || 'https://placehold.co/600x400',
-      noteCount: subject?.noteCount || 0,
-      quizCount: subject?.quizCount || 0,
-    };
-    onSubjectSaved(newSubject);
-    setIsOpen(false);
-    // Reset form if we're creating a new subject
-    if (!subject) {
-        setName('');
-        setDescription('');
+  const handleSave = async () => {
+    if (!name || !description) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please fill out all fields.' });
+        return;
+    }
+    
+    setLoading(true);
+    try {
+        const newSubjectData = {
+          name,
+          description,
+          image: subject?.image || `https://placehold.co/600x400.png?text=${name.charAt(0)}`,
+          noteCount: subject?.noteCount || 0,
+          quizCount: subject?.quizCount || 0,
+        };
+        
+        await saveSubject(newSubjectData, subject?.id);
+
+        toast({ title: 'Success', description: `Subject ${subject ? 'updated' : 'created'} successfully.` });
+        onSubjectSaved();
+        setIsOpen(false);
+        if (!subject) {
+            setName('');
+            setDescription('');
+        }
+    } catch(error) {
+        console.error("Failed to save subject:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not save the subject.' });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -87,7 +106,7 @@ export function SubjectEditorDialog({ children, subject = null, onSubjectSaved }
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Save Subject</Button>
+          <Button onClick={handleSave} disabled={loading}>{loading ? 'Saving...' : 'Save Subject'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
