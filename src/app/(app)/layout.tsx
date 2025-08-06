@@ -1,3 +1,6 @@
+
+'use client';
+
 import Link from 'next/link';
 import {
   BookCopy,
@@ -7,23 +10,40 @@ import {
   LogOut,
   Menu,
   User,
+  BookPlus,
+  Users,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Logo } from '@/components/logo';
+import { usePathname } from 'next/navigation';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const navItems = [
+  const pathname = usePathname();
+  const isTeacher = pathname.startsWith('/teacher');
+
+  const studentNavItems = [
     { href: '/dashboard', icon: Home, label: 'Dashboard' },
     { href: '/notes', icon: BookCopy, label: 'Notes' },
     { href: '/quizzes', icon: HelpCircle, label: 'Quizzes' },
     { href: '/profile', icon: User, label: 'Profile' },
   ];
 
+  const teacherNavItems = [
+    { href: '/teacher/dashboard', icon: Home, label: 'Dashboard' },
+    { href: '/teacher/notes', icon: BookPlus, label: 'Manage Notes' },
+    { href: '/teacher/quizzes', icon: HelpCircle, label: 'Manage Quizzes' },
+    { href: '/teacher/students', icon: Users, label: 'Students' },
+    { href: '/profile', icon: User, label: 'Profile' },
+  ];
+  
+  const navItems = isTeacher ? teacherNavItems : studentNavItems;
+  const homeLink = isTeacher ? '/teacher/dashboard' : '/dashboard';
+
   const sidebarContent = (
     <div className="flex h-full max-h-screen flex-col gap-2">
       <div className="flex h-14 items-center border-b border-border/50 px-4 lg:h-[60px] lg:px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+        <Link href={homeLink} className="flex items-center gap-2 font-semibold">
           <Logo />
         </Link>
       </div>
@@ -33,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link
               key={item.label}
               href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted ${pathname === item.href ? 'bg-muted text-primary' : ''}`}
             >
               <item.icon className="h-4 w-4" />
               {item.label}
