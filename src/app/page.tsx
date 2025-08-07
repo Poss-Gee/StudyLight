@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/logo';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/use-auth';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +32,7 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, signInWithGoogle, resetPassword } = useAuth();
+  const { login, resetPassword } = useAuth();
   const { toast } = useToast();
   const [resetEmail, setResetEmail] = useState('');
   const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
@@ -58,18 +57,6 @@ export default function LoginPage() {
       });
     }
   };
-  
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithGoogle('student');
-    } catch (error: any) {
-       toast({
-        variant: 'destructive',
-        title: 'Google Sign-In Failed',
-        description: error.message,
-      });
-    }
-  }
   
   const handlePasswordReset = async () => {
     if(!resetEmail) {
@@ -156,17 +143,12 @@ export default function LoginPage() {
                 </Button>
               </form>
             </Form>
-            <Separator className="my-6" />
-            <div className="space-y-4">
-              <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
-                Login with Google
-              </Button>
-              <div className="mt-4 text-center text-sm">
-                Don&apos;t have an account?{' '}
-                <Link href="/signup" className="underline text-accent">
-                  Sign up
-                </Link>
-              </div>
+            
+            <div className="mt-4 text-center text-sm">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="underline text-accent">
+                Sign up
+              </Link>
             </div>
           </CardContent>
         </Card>
