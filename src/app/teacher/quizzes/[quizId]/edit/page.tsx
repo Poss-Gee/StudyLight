@@ -7,7 +7,6 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import Link from 'next/link';
-import { Wand2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,13 +14,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getQuiz, getSubjects, saveQuiz } from '@/lib/firestore';
 import type { Subject, Quiz } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { generateQuiz } from '@/ai/flows/generate-quiz-flow';
 
 const questionSchema = z.object({
     id: z.string().optional(),
@@ -48,9 +45,6 @@ export default function QuizEditorPage() {
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(!isNewQuiz);
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [aiTopic, setAiTopic] = useState('');
-    const [aiQuestionCount, setAiQuestionCount] = useState('5');
 
     const form = useForm<QuizFormValues>({
         resolver: zodResolver(quizFormSchema),
@@ -100,30 +94,6 @@ export default function QuizEditorPage() {
         };
         fetchData();
     }, [quizId, isNewQuiz, form, toast]);
-
-    const handleAiGenerate = async () => {
-        const subjectId = form.getValues('subject');
-        if (!aiTopic || !subjectId) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Please provide a topic and select a subject to generate a quiz.' });
-            return;
-        }
-
-        setIsGenerating(true);
-        try {
-            const subjectName = subjects.find(s => s.id === subjectId)?.name || '';
-            const result = await generateQuiz({ topic: aiTopic, subject: subjectName, questionCount: parseInt(aiQuestionCount) });
-            
-            form.setValue('title', result.title);
-            replace(result.questions.map(q => ({ ...q, id: `q-${Math.random()}` })));
-
-            toast({ title: 'Quiz Generated!', description: 'The generated quiz has been populated in the form.' });
-        } catch (error) {
-            console.error('AI generation failed', error);
-            toast({ variant: 'destructive', title: 'Generation Failed', description: 'Could not generate the quiz with AI.' });
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     const onSubmit = async (data: QuizFormValues) => {
         setLoading(true);
@@ -212,39 +182,6 @@ export default function QuizEditorPage() {
                                     )}
                                 />
                             </div>
-                            {isNewQuiz && (
-                                <div className="p-4 border rounded-lg space-y-4 bg-card-nested">
-                                    <Label>Generate with AI</Label>
-                                    <p className="text-sm text-muted-foreground">
-                                        Provide a topic and let AI generate the quiz for you.
-                                    </p>
-                                    <div className="flex flex-col sm:flex-row gap-2">
-                                        <Input
-                                            placeholder="e.g., Photosynthesis"
-                                            value={aiTopic}
-                                            onChange={(e) => setAiTopic(e.target.value)}
-                                            disabled={isGenerating}
-                                            className="flex-grow"
-                                        />
-                                        <div className="flex items-center gap-2">
-                                            <Select value={aiQuestionCount} onValueChange={setAiQuestionCount} disabled={isGenerating}>
-                                                <SelectTrigger className="w-[180px]">
-                                                    <SelectValue placeholder="No. of questions" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="3">3 Questions</SelectItem>
-                                                    <SelectItem value="5">5 Questions</SelectItem>
-                                                    <SelectItem value="10">10 Questions</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <Button type="button" onClick={handleAiGenerate} disabled={isGenerating}>
-                                                <Wand2 className="mr-2 h-4 w-4" />
-                                                {isGenerating ? 'Generating...' : 'Generate'}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
 
@@ -340,8 +277,8 @@ export default function QuizEditorPage() {
                          <Button type="button" variant="outline" onClick={() => router.push('/teacher/quizzes')}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading || isGenerating || !form.formState.isValid}>
-                            {loading || isGenerating ? 'Saving...' : 'Save Quiz'}
+                        <Button type="submit" disabled={loading || !form.formState.isValid}>
+                            {loading ? 'Saving...' : 'Save Quiz'}
                         </Button>
                     </div>
                 </form>
