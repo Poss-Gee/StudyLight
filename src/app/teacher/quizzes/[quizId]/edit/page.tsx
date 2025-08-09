@@ -28,7 +28,7 @@ const questionSchema = z.object({
     correctAnswer: z.coerce.number().min(0, "Please select a correct answer."),
 });
 
-export const quizFormSchema = z.object({
+const quizFormSchema = z.object({
     title: z.string().min(3, "Title must be at least 3 characters."),
     subject: z.string().min(1, "Please select a subject."),
     questions: z.array(questionSchema).min(1, "A quiz must have at least one question."),
