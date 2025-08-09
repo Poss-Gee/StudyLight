@@ -19,6 +19,8 @@ import { Textarea } from './ui/textarea';
 import type { Note, Subject } from '@/lib/types';
 import { saveNote } from '@/lib/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { Sparkles } from 'lucide-react';
+import { generateNote } from '@/ai/flows/generate-note-flow';
 
 interface NoteEditorDialogProps {
   children: ReactNode;
@@ -32,6 +34,7 @@ export function NoteEditorDialog({ children, subject, note = null, onNoteSaved }
   const [title, setTitle] = useState(note?.title || '');
   const [content, setContent] = useState(note?.content || '');
   const [loading, setLoading] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
   const { toast } = useToast();
 
   const isEditing = note !== null;
@@ -48,6 +51,24 @@ export function NoteEditorDialog({ children, subject, note = null, onNoteSaved }
         }
     }
   }, [isOpen, isEditing, note]);
+
+  const handleGenerateNote = async () => {
+    if (!title) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please enter a title or topic for the note first.' });
+        return;
+    }
+    setAiLoading(true);
+    try {
+        const result = await generateNote({ subject: subject.name, topic: title });
+        setContent(result.content);
+        setTitle(result.title);
+    } catch(error) {
+        console.error("Failed to generate note:", error);
+        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not generate the note content.' });
+    } finally {
+        setAiLoading(false);
+    }
+  }
 
   const handleSave = async () => {
     if (!title || !content) {
@@ -89,7 +110,7 @@ export function NoteEditorDialog({ children, subject, note = null, onNoteSaved }
         <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="title" className="text-right">
-                Title
+                Title/Topic
                 </Label>
                 <Input
                 id="title"
@@ -98,6 +119,20 @@ export function NoteEditorDialog({ children, subject, note = null, onNoteSaved }
                 className="col-span-3"
                 placeholder="e.g. Introduction to Algebra"
                 />
+            </div>
+             <div className="grid grid-cols-4 items-start gap-4">
+                <div className="col-start-2 col-span-3">
+                     <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleGenerateNote}
+                        disabled={aiLoading}
+                        >
+                        <Sparkles className={`mr-2 h-4 w-4 ${aiLoading ? 'animate-spin' : ''}`} />
+                        {aiLoading ? 'Generating...' : 'Generate Content with AI'}
+                    </Button>
+                </div>
             </div>
             <div className="grid grid-cols-4 items-start gap-4">
                 <Label htmlFor="content" className="text-right pt-2">

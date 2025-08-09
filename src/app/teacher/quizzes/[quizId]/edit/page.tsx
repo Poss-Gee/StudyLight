@@ -14,11 +14,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, PlusCircle, ArrowLeft } from 'lucide-react';
+import { Trash2, PlusCircle, ArrowLeft, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getQuiz, getSubjects, saveQuiz } from '@/lib/firestore';
 import type { Subject, Quiz } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generateQuiz } from '@/ai/flows/generate-quiz-flow';
 
 const questionSchema = z.object({
     id: z.string().optional(),
@@ -45,6 +46,7 @@ export default function QuizEditorPage() {
     const [quiz, setQuiz] = useState<Quiz | null>(null);
     const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(!isNewQuiz);
+    const [aiLoading, setAiLoading] = useState(false);
 
     const form = useForm<QuizFormValues>({
         resolver: zodResolver(quizFormSchema),
@@ -94,6 +96,36 @@ export default function QuizEditorPage() {
         };
         fetchData();
     }, [quizId, isNewQuiz, form, toast]);
+
+
+     const handleGenerateQuestions = async () => {
+        const { title, subject } = form.getValues();
+        if (!title || !subject) {
+            toast({ variant: 'destructive', title: "Error", description: "Please enter a title and select a subject first."});
+            return;
+        }
+        setAiLoading(true);
+        try {
+            const result = await generateQuiz({
+                title,
+                subject: subjects.find(s => s.id === subject)?.name || '',
+                numQuestions: 5,
+            });
+            const newQuestions = result.questions.map((q: any) => ({
+                ...q,
+                id: `q-${Math.random()}`,
+            }));
+            replace(newQuestions);
+            toast({ title: "Success!", description: "AI has generated new questions for your quiz." });
+
+        } catch (error) {
+            console.error("Failed to generate quiz:", error);
+            toast({ variant: 'destructive', title: "AI Error", description: "Could not generate questions for the quiz." });
+        } finally {
+            setAiLoading(false);
+        }
+    }
+
 
     const onSubmit = async (data: QuizFormValues) => {
         setLoading(true);
@@ -186,9 +218,20 @@ export default function QuizEditorPage() {
                     </Card>
 
                     <Card>
-                         <CardHeader>
-                            <CardTitle>Questions</CardTitle>
-                            <CardDescription>Add questions and options for your quiz.</CardDescription>
+                         <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle>Questions</CardTitle>
+                                <CardDescription>Add questions and options for your quiz.</CardDescription>
+                            </div>
+                             <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleGenerateQuestions}
+                                disabled={aiLoading}
+                                >
+                                <Sparkles className={`mr-2 h-4 w-4 ${aiLoading ? 'animate-spin' : ''}`} />
+                                {aiLoading ? 'Generating...' : 'Generate Questions with AI'}
+                            </Button>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {fields.map((field, index) => (
