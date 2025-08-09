@@ -10,5 +10,5 @@ export const ai: Ai = genkit({
     googleAI(),
   ],
   logLevel: 'debug',
-  enableTracingAndMetrics: true,
+  enableTracingAndMetrics: false,
 });

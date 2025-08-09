@@ -49,7 +49,7 @@ const generateNoteFlow = ai.defineFlow(
     inputSchema: GenerateNoteInputSchema,
     outputSchema: GenerateNoteOutputSchema,
   },
-  async (input) => {
+  async (input: GenerateNoteInput) => {
     const { output } = await prompt(input);
     if (!output) {
       throw new Error('No output from prompt');

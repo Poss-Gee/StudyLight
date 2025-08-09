@@ -55,7 +55,7 @@ const generateQuizFlow = ai.defineFlow(
     inputSchema: GenerateQuizInputSchema,
     outputSchema: GenerateQuizOutputSchema,
   },
-  async (input) => {
+  async (input: GenerateQuizInput) => {
     const { output } = await prompt(input);
      if (!output) {
       throw new Error('No output from prompt');
